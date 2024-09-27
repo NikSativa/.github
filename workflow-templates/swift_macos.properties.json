@@ -1,0 +1,16 @@
+{
+    "name": "Swift Package Manager CI",
+    "description": "Build and test a Swift Package.",
+    "categories": [
+        "Swift",
+        "SPM",
+        "Swift Package Manager",
+        "build",
+        "building",
+        "test",
+        "testing"
+    ],
+    "filePatterns": [
+        "Package.swift"
+    ]
+}
