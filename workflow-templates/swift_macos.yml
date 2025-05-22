@@ -30,9 +30,9 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - xcode: "Xcode_16.1"
+          - xcode: "Xcode_16.3"
             runsOn: macOS-15
-            swift: "6.0.2"
+            swift: "6.1"
             outputFilter: xcbeautify --renderer github-actions
           - xcode: "Xcode_16.0"
             runsOn: macOS-15
