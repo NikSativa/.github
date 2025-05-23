@@ -3,6 +3,7 @@ name: "NikSativa CI"
 on:
   push:
     branches:
+      - "main"
       - $default-branch
     paths:
       - ".github/workflows/**"
@@ -47,7 +48,7 @@ jobs:
             swift: "5.9"
             outputFilter: xcbeautify --renderer github-actions
     steps:
-      - uses: NeedleInAJayStack/setup-swift@feat/swift-6 # swift-actions/setup-swift@main
+      - uses: swift-actions/setup-swift@v2
         with:
           swift-version: ${{ matrix.swift }}
       - uses: actions/checkout@v4
