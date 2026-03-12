@@ -34,6 +34,11 @@ jobs:
           - platform: "macOS"
             xcode: "Xcode_16.3"
             runsOn: macOS-15
+            swift: "6.2"
+            outputFilter: xcbeautify --renderer github-actions
+          - platform: "macOS"
+            xcode: "Xcode_16.3"
+            runsOn: macOS-15
             swift: "6.1"
             outputFilter: xcbeautify --renderer github-actions
           - platform: "macOS"
@@ -46,10 +51,10 @@ jobs:
             runsOn: macOS-14
             swift: "5.10"
             outputFilter: xcbeautify --renderer github-actions
-          - platform: "macOS"
-            xcode: "Xcode_15.2"
-            runsOn: macOS-14
-            swift: "5.9"
+          - platform: "iOS"
+            xcode: "Xcode_16.3"
+            runsOn: macOS-15
+            swift: "6.2"
             outputFilter: xcbeautify --renderer github-actions
           - platform: "iOS"
             xcode: "Xcode_16.3"
@@ -59,7 +64,17 @@ jobs:
           - platform: "tvOS"
             xcode: "Xcode_16.3"
             runsOn: macOS-15
+            swift: "6.2"
+            outputFilter: xcbeautify --renderer github-actions
+          - platform: "tvOS"
+            xcode: "Xcode_16.3"
+            runsOn: macOS-15
             swift: "6.1"
+            outputFilter: xcbeautify --renderer github-actions
+          - platform: "watchOS"
+            xcode: "Xcode_16.3"
+            runsOn: macOS-15
+            swift: "6.2"
             outputFilter: xcbeautify --renderer github-actions
           - platform: "watchOS"
             xcode: "Xcode_16.3"
@@ -67,7 +82,7 @@ jobs:
             swift: "6.1"
             outputFilter: xcbeautify --renderer github-actions
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Cache Swift packages
         uses: actions/cache@v4
         with:
@@ -78,15 +93,20 @@ jobs:
         with:
           path: ~/Library/Developer/Xcode/DerivedData
           key: ${{ runner.os }}-xcode-${{ matrix.xcode }}
-      - uses: swift-actions/setup-swift@v2
+      - uses: swift-actions/setup-swift@v2.4.0
         with:
           swift-version: ${{ matrix.swift }}
       - name: Lint
         run: swift package resolve
       - name: "Build ${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
-        run: swift build -v | ${{ matrix.outputFilter }}
+        shell: bash
+        run: |
+          set -o pipefail
+          swift build -v | ${{ matrix.outputFilter }}
       - name: "Test ${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
-        run: swift test -v | ${{ matrix.outputFilter }}
+        shell: bash
+        run: |
+          set -o pipefail
+          swift test -v | ${{ matrix.outputFilter }}
       - name: Test coverage
-        if: matrix.swift != '5.9'
         run: swift test --enable-code-coverage
