@@ -17,40 +17,45 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: "macOS"
-            xcode: "Xcode_16.3"
-            runsOn: macOS-15
-            swift: "6.2"
-            outputFilter: xcbeautify --renderer github-actions
-          - platform: "macOS"
-            xcode: "Xcode_16.3"
-            runsOn: macOS-15
-            swift: "6.1"
-            outputFilter: xcbeautify --renderer github-actions
-          - platform: "macOS"
-            xcode: "Xcode_16.0"
-            runsOn: macOS-15
-            swift: "6.0"
-            outputFilter: xcbeautify --renderer github-actions
+          # Swift 5.10
           - platform: "macOS"
             xcode: "Xcode_15.4"
             runsOn: macOS-14
             swift: "5.10"
             outputFilter: xcbeautify --renderer github-actions
-          - platform: "iOS"
+          # Swift 6.0
+          - platform: "macOS"
+            xcode: "Xcode_16.1"
+            runsOn: macOS-15
+            swift: "6.0"
+            outputFilter: xcbeautify --renderer github-actions
+          # Swift 6.1
+          - platform: "macOS"
             xcode: "Xcode_16.3"
             runsOn: macOS-15
             swift: "6.1"
+            outputFilter: xcbeautify --renderer github-actions
+          # Swift 6.2
+          - platform: "macOS"
+            xcode: "Xcode_16.4"
+            runsOn: macOS-15
+            swift: "6.2"
+            outputFilter: xcbeautify --renderer github-actions
+          # Platforms (build-only, swift test is macOS-only)
+          - platform: "iOS"
+            xcode: "Xcode_16.4"
+            runsOn: macOS-15
+            swift: "6.2"
             outputFilter: xcbeautify --renderer github-actions
           - platform: "tvOS"
-            xcode: "Xcode_16.3"
+            xcode: "Xcode_16.4"
             runsOn: macOS-15
-            swift: "6.1"
+            swift: "6.2"
             outputFilter: xcbeautify --renderer github-actions
           - platform: "watchOS"
-            xcode: "Xcode_16.3"
+            xcode: "Xcode_16.4"
             runsOn: macOS-15
-            swift: "6.1"
+            swift: "6.2"
             outputFilter: xcbeautify --renderer github-actions
     steps:
       - uses: actions/checkout@v4
@@ -74,5 +79,5 @@ jobs:
       - name: "Test ${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
         run: swift test -v | ${{ matrix.outputFilter }}
       - name: Test coverage
-        if: matrix.swift != '5.9'
+        if: matrix.swift != '5.10'
         run: swift test --enable-code-coverage
