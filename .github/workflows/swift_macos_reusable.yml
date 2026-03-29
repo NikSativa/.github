@@ -79,5 +79,5 @@ jobs:
       - name: "Test ${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
         run: swift test -v | ${{ matrix.outputFilter }}
       - name: Test coverage
-        if: matrix.swift != '5.10'
+        if: matrix.swift != '5.10' && matrix.swift != '6.0' && matrix.platform == 'macOS'
         run: swift test --enable-code-coverage
