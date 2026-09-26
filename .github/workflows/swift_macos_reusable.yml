@@ -13,21 +13,19 @@ jobs:
     env:
       DEVELOPER_DIR: "/Applications/${{ matrix.xcode }}.app/Contents/Developer"
     timeout-minutes: 15
+    defaults:
+      run:
+        shell: bash
     strategy:
       fail-fast: false
       matrix:
         include:
-          # Swift 5.10
-          - platform: "macOS"
-            xcode: "Xcode_15.4"
-            runsOn: macOS-14
-            swift: "5.10"
-            outputFilter: xcbeautify --renderer github-actions
-          # Swift 6.0
+          # Swift 6.0 from Xcode 16.1: the swift.org 6.0.3 toolchain crashes emitting debug info for SwiftUICore types
           - platform: "macOS"
             xcode: "Xcode_16.1"
             runsOn: macOS-15
             swift: "6.0"
+            toolchain: "xcode"
             outputFilter: xcbeautify --renderer github-actions
           # Swift 6.1
           - platform: "macOS"
@@ -70,6 +68,7 @@ jobs:
           path: ~/Library/Developer/Xcode/DerivedData
           key: ${{ runner.os }}-xcode-${{ matrix.xcode }}
       - uses: swift-actions/setup-swift@v2
+        if: matrix.toolchain != 'xcode'
         with:
           swift-version: ${{ matrix.swift }}
       - name: Lint
@@ -79,5 +78,5 @@ jobs:
       - name: "Test ${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
         run: swift test -v | ${{ matrix.outputFilter }}
       - name: Test coverage
-        if: matrix.swift != '5.10' && matrix.swift != '6.0' && matrix.platform == 'macOS'
+        if: matrix.swift != '6.0' && matrix.platform == 'macOS'
         run: swift test --enable-code-coverage
