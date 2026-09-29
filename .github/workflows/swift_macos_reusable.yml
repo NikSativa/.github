@@ -7,76 +7,69 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
+  plan:
+    name: "Plan"
+    runs-on: macos-15
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository || 'NikSativa/.github' }}
+          ref: ${{ job.workflow_sha || 'main' }}
+          path: .ci
+      - name: Resolve supported platforms and Swift versions
+        id: matrix
+        shell: bash
+        run: |
+          matrix=$(.ci/scripts/ci-job-matrix.sh .)
+          echo "$matrix"
+          echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
+
   test:
-    name: "${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
-    runs-on: ${{ matrix.runsOn }}
+    name: "${{ matrix.platform }} Swift ${{ matrix.swift }} (${{ matrix.action }})"
+    needs: plan
+    runs-on: macos-15
     env:
-      DEVELOPER_DIR: "/Applications/${{ matrix.xcode }}.app/Contents/Developer"
-    timeout-minutes: 15
+      DEVELOPER_DIR: "${{ matrix.xcode }}/Contents/Developer"
+    timeout-minutes: 30
     defaults:
       run:
         shell: bash
     strategy:
       fail-fast: false
-      matrix:
-        include:
-          # Swift 6.0 from Xcode 16.1: the swift.org 6.0.3 toolchain crashes emitting debug info for SwiftUICore types
-          - platform: "macOS"
-            xcode: "Xcode_16.1"
-            runsOn: macOS-15
-            swift: "6.0"
-            toolchain: "xcode"
-            outputFilter: xcbeautify --renderer github-actions
-          # Swift 6.1
-          - platform: "macOS"
-            xcode: "Xcode_16.3"
-            runsOn: macOS-15
-            swift: "6.1"
-            outputFilter: xcbeautify --renderer github-actions
-          # Swift 6.2
-          - platform: "macOS"
-            xcode: "Xcode_16.4"
-            runsOn: macOS-15
-            swift: "6.2"
-            outputFilter: xcbeautify --renderer github-actions
-          # Platforms (build-only, swift test is macOS-only)
-          - platform: "iOS"
-            xcode: "Xcode_16.4"
-            runsOn: macOS-15
-            swift: "6.2"
-            outputFilter: xcbeautify --renderer github-actions
-          - platform: "tvOS"
-            xcode: "Xcode_16.4"
-            runsOn: macOS-15
-            swift: "6.2"
-            outputFilter: xcbeautify --renderer github-actions
-          - platform: "watchOS"
-            xcode: "Xcode_16.4"
-            runsOn: macOS-15
-            swift: "6.2"
-            outputFilter: xcbeautify --renderer github-actions
+      matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with:
+          repository: ${{ job.workflow_repository || 'NikSativa/.github' }}
+          ref: ${{ job.workflow_sha || 'main' }}
+          path: .ci
       - name: Cache Swift packages
+        if: matrix.platform == 'macOS'
         uses: actions/cache@v4
         with:
           path: .build
-          key: ${{ runner.os }}-spm-${{ hashFiles('**/Package.resolved') }}
+          key: ${{ runner.os }}-spm-swift${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
       - name: Cache Xcode
+        if: matrix.platform != 'macOS'
         uses: actions/cache@v4
         with:
           path: ~/Library/Developer/Xcode/DerivedData
-          key: ${{ runner.os }}-xcode-${{ matrix.xcode }}
-      - uses: swift-actions/setup-swift@v2
-        if: matrix.toolchain != 'xcode'
-        with:
-          swift-version: ${{ matrix.swift }}
+          key: ${{ runner.os }}-xcode-${{ matrix.platform }}-swift${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
       - name: Lint
         run: swift package resolve
-      - name: "Build ${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
-        run: swift build -v | ${{ matrix.outputFilter }}
-      - name: "Test ${{ matrix.platform }} ${{ matrix.xcode }} ${{ matrix.swift }}"
-        run: swift test -v | ${{ matrix.outputFilter }}
+      - name: Build
+        if: matrix.platform == 'macOS'
+        run: swift build -v | xcbeautify --renderer github-actions
+      - name: Test
+        if: matrix.platform == 'macOS'
+        run: swift test -v | xcbeautify --renderer github-actions
+      - name: "xcodebuild ${{ matrix.action }} on ${{ matrix.platform }}"
+        if: matrix.platform != 'macOS'
+        run: .ci/scripts/ci-xcodebuild.sh "${{ matrix.action }}" "${{ matrix.platform }}" . | xcbeautify --renderer github-actions
       - name: Test coverage
-        if: matrix.swift != '6.0' && matrix.platform == 'macOS'
+        if: matrix.coverage
         run: swift test --enable-code-coverage
