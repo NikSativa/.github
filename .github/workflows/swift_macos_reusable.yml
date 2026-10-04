@@ -67,6 +67,9 @@ jobs:
       - name: Test
         if: matrix.platform == 'macOS'
         run: swift test -v | xcbeautify --renderer github-actions
+      - name: Rerun tests serially with raw output
+        if: failure() && matrix.platform == 'macOS'
+        run: swift test --no-parallel 2>&1 | tail -n 400
       - name: "xcodebuild ${{ matrix.action }} on ${{ matrix.platform }}"
         if: matrix.platform != 'macOS'
         run: .ci/scripts/ci-xcodebuild.sh "${{ matrix.action }}" "${{ matrix.platform }}" . | xcbeautify --renderer github-actions
