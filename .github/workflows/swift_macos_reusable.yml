@@ -13,8 +13,8 @@ jobs:
     outputs:
       matrix: ${{ steps.matrix.outputs.matrix }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           repository: ${{ job.workflow_repository || 'NikSativa/.github' }}
           ref: ${{ job.workflow_sha || 'main' }}
@@ -41,21 +41,21 @@ jobs:
       fail-fast: false
       matrix: ${{ fromJSON(needs.plan.outputs.matrix) }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
+      - uses: actions/checkout@v7
         with:
           repository: ${{ job.workflow_repository || 'NikSativa/.github' }}
           ref: ${{ job.workflow_sha || 'main' }}
           path: .ci
       - name: Cache Swift packages
         if: matrix.platform == 'macOS'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: .build
           key: ${{ runner.os }}-spm-swift${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
       - name: Cache Xcode
         if: matrix.platform != 'macOS'
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/Library/Developer/Xcode/DerivedData
           key: ${{ runner.os }}-xcode-${{ matrix.platform }}-swift${{ matrix.swift }}-${{ hashFiles('**/Package.resolved') }}
