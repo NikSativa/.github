@@ -7,11 +7,12 @@ env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 jobs:
-  plan:
-    name: "Plan"
-    runs-on: macos-15
-    outputs:
-      matrix: ${{ steps.matrix.outputs.matrix }}
+  toolchains:
+    name: "Toolchains on ${{ matrix.runner }}"
+    runs-on: ${{ matrix.runner }}
+    strategy:
+      matrix:
+        runner: [macos-15, macos-26, xcode-27]
     steps:
       - uses: actions/checkout@v7
       - uses: actions/checkout@v7
@@ -19,18 +20,44 @@ jobs:
           repository: ${{ job.workflow_repository || 'NikSativa/.github' }}
           ref: ${{ job.workflow_sha || 'main' }}
           path: .ci
+      - name: Find release Xcode toolchains
+        shell: bash
+        run: .ci/scripts/ci-toolchains.sh "${{ matrix.runner }}" . "${{ runner.temp }}/toolchains"
+      - uses: actions/upload-artifact@v7
+        with:
+          name: toolchains-${{ matrix.runner }}
+          path: ${{ runner.temp }}/toolchains
+          if-no-files-found: error
+          retention-days: 1
+
+  plan:
+    name: "Plan"
+    needs: toolchains
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          repository: ${{ job.workflow_repository || 'NikSativa/.github' }}
+          ref: ${{ job.workflow_sha || 'main' }}
+          path: .ci
+      - uses: actions/download-artifact@v8
+        with:
+          pattern: toolchains-*
+          path: ${{ runner.temp }}/toolchains
       - name: Resolve supported platforms and Swift versions
         id: matrix
         shell: bash
         run: |
-          matrix=$(.ci/scripts/ci-job-matrix.sh .)
+          matrix=$(.ci/scripts/ci-job-matrix.sh "${{ runner.temp }}/toolchains")
           echo "$matrix"
           echo "matrix=$matrix" >> "$GITHUB_OUTPUT"
 
   test:
     name: "${{ matrix.platform }} Swift ${{ matrix.swift }} (${{ matrix.action }})"
     needs: plan
-    runs-on: macos-15
+    runs-on: ${{ matrix.runner }}
     env:
       DEVELOPER_DIR: "${{ matrix.xcode }}/Contents/Developer"
     timeout-minutes: 30
